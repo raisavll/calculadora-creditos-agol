@@ -10,8 +10,10 @@
     }));
 
   let st = $state(fresh());
-  let saldo = $state('');
-  let precio = $state('');
+  // PRESUPUESTO (desactivado). Para reactivarlo: descomente estas líneas, `disp`, las dos líneas de reset()
+  // y el bloque "Presupuesto (opcional)" del HTML.
+  // let saldo = $state('');
+  // let precio = $state('');
   let copied = $state('Copiar resumen');
 
   const nf = (x, d = 2) => x.toLocaleString('es', { maximumFractionDigits: d });
@@ -30,14 +32,18 @@
   );
   const total = $derived(rows.reduce((a, r) => a + r.c, 0));
   const sub = (i) => rows.find((r) => r.i === i)?.c ?? 0;
-  const disp = $derived(parseFloat(saldo));
+  // const disp = $derived(parseFloat(saldo));
 
   async function copy() {
     const t = `Estimación de créditos de ArcGIS Online\n${rows.map((r) => `- ${r.name}: ${nf(r.c)}`).join('\n')}\nTOTAL: ${nf(total)} créditos`;
     try { await navigator.clipboard.writeText(t); copied = 'Copiado'; } catch { copied = 'No se pudo copiar'; }
     setTimeout(() => (copied = 'Copiar resumen'), 1500);
   }
-  function reset() { st = fresh(); saldo = ''; precio = ''; }
+  function reset() {
+    st = fresh();
+    // saldo = '';
+    // precio = '';
+  }
 </script>
 
 <calcite-shell>
@@ -107,6 +113,7 @@
         </calcite-list>
       </calcite-block>
 
+      <!-- PRESUPUESTO (desactivado): descomente este bloque para mostrar créditos disponibles y precio por crédito.
       <calcite-block heading="Presupuesto (opcional)" expanded>
         <calcite-label>Créditos disponibles
           <calcite-input-number min="0" step="any" number-button-type="none" value={saldo}
@@ -125,6 +132,7 @@
           {/if}
         {/if}
       </calcite-block>
+      -->
 
       <div class="btns">
         <calcite-button icon-start="copy" onclick={copy}>{copied}</calcite-button>
