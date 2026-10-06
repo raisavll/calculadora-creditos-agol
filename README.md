@@ -1,8 +1,10 @@
 # Calculadora de créditos de ArcGIS Online
 
-Estimación de créditos de ArcGIS Online de acuerdo con la [tabla oficial de créditos por servicio](https://doc.arcgis.com/es/arcgis-online/administer/credits.htm). La persona marca los servicios que va a usar, ingresa cantidades y ve el total al instante. Es una **estimación**: no guarda ni envía datos.
+Estimación de créditos de ArcGIS Online de acuerdo con la [tabla oficial de créditos por servicio](https://doc.arcgis.com/es/arcgis-online/administer/credits.htm). La persona marca los servicios que va a usar, ingresa cantidades, ve el total al instante y puede **descargar un reporte PDF** con el desglose. Es una **estimación**: no guarda ni envía datos.
 
-**Tecnologías:** Svelte 5 · Calcite Design System (componentes web de Esri) · Vite · Bun · GitHub Actions · GitHub Pages.
+**Tecnologías:** Svelte 5 · Calcite Design System (componentes web de Esri) · marked + pdfmake (reporte PDF) · Vite · Bun · GitHub Actions · GitHub Pages.
+
+Elaborado por: [@raisavll](https://github.com/raisavll)
 
 ---
 
@@ -42,6 +44,7 @@ flowchart TD
 - **Estado (`src/App.svelte`):** `st` guarda, por servicio, si está marcado y el valor de cada campo. Vive solo en memoria; al recargar la página se pierde.
 - **Cálculo:** `rows` y `total` son valores derivados (`$derived`): se recalculan solos cuando cambia el estado. Los tamaños en KB, MB o GB se convierten a la unidad de la tarifa antes de calcular.
 - **Interfaz:** componentes de Calcite. Al escribir o marcar algo, Calcite emite un evento (`calciteInputNumberInput`, `calciteCheckboxChange`, `calciteSelectChange`), el estado cambia y Svelte actualiza la pantalla.
+- **Reporte PDF (`src/reporte/`):** el botón **Descargar PDF** llena la plantilla Markdown `plantilla.md` (marcadores `{{fecha}}`, `{{total}}`, `{{servicios}}`, `{{filas}}`, `{{detalle}}`), la interpreta con **marked** y la compone con **pdfmake** como un documento técnico: secciones numeradas, tablas tipo booktabs y la paleta de Calcite. El texto es vectorial y se puede seleccionar. Cada página lleva al pie el crédito y la numeración. Todo ocurre en el navegador y las librerías se cargan solo al pulsar el botón.
 - **Red:** la única conexión externa es la carga de Calcite desde `js.arcgis.com`. Sin internet, la página no puede dibujar los componentes.
 
 ### Decisiones de diseño
@@ -64,6 +67,9 @@ index.html                   Página base: carga Calcite y el script de la aplic
 src/main.js                  Arranque: monta App.svelte en <div id="app">
 src/App.svelte               Interfaz, estado y cálculo
 src/services.js              Tarifas y fórmulas
+src/reporte/plantilla.md     Plantilla Markdown del reporte PDF
+src/reporte/estilo.js        Tipografía, colores y tablas del reporte
+src/reporte/pdf.js           Llena la plantilla y genera el PDF
 vite.config.js               Configuración de Vite (plugin de Svelte, base './')
 package.json / bun.lock      Dependencias y comandos
 .github/workflows/pages.yml  Compila y publica en GitHub Pages
@@ -100,6 +106,8 @@ bun run build      # genera dist/
 ```
 
 Para un campo de tamaño con selector KB/MB/GB use `SZ('id', 'Etiqueta', 'MB')`; la unidad indicada es la que usa la tarifa.
+
+**Cambiar el reporte:** edite el texto de `src/reporte/plantilla.md` (Markdown: títulos `#`, `##`, párrafos, listas, tablas, `> notas`) y los colores, tamaños o márgenes en `src/reporte/estilo.js`. Los `##` se numeran solos.
 
 ## Supuestos y límites
 

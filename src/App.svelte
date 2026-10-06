@@ -14,7 +14,7 @@
   // y el bloque "Presupuesto (opcional)" del HTML.
   // let saldo = $state('');
   // let precio = $state('');
-  let copied = $state('Copiar resumen');
+  let generando = $state(false);
 
   const nf = (x, d = 2) => x.toLocaleString('es', { maximumFractionDigits: d });
 
@@ -34,10 +34,30 @@
   const sub = (i) => rows.find((r) => r.i === i)?.c ?? 0;
   // const disp = $derived(parseFloat(saldo));
 
-  async function copy() {
-    const t = `Estimación de créditos de ArcGIS Online\n${rows.map((r) => `- ${r.name}: ${nf(r.c)}`).join('\n')}\nTOTAL: ${nf(total)} créditos`;
-    try { await navigator.clipboard.writeText(t); copied = 'Copiado'; } catch { copied = 'No se pudo copiar'; }
-    setTimeout(() => (copied = 'Copiar resumen'), 1500);
+  // Reporte PDF: arma los datos de cada servicio marcado y los pasa a la plantilla Markdown (src/reporte/)
+  async function reporte() {
+    generando = true;
+    try {
+      const items = rows.map((r) => {
+        const s = S[r.i];
+        const campos = s.f.map((fd, k) => {
+          const f = st[r.i].f[k];
+          const x = parseFloat(f.val) || 0;
+          let valor = nf(x, 3);
+          if (f.base) valor += ` ${f.unit}`;
+          else if (fd[3]) valor = fd[3].find(([v]) => String(v) === f.val)?.[1] ?? f.val;
+          return { etiqueta: fd[1], valor };
+        });
+        return { name: s.t, grupo: s.g, tarifa: s.r, nota: s.n, c: r.c, campos };
+      });
+      const { generarPDF } = await import('./reporte/pdf.js');
+      await generarPDF(items, total, nf);
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo generar el reporte PDF.');
+    } finally {
+      generando = false;
+    }
   }
   function reset() {
     st = fresh();
@@ -135,7 +155,7 @@
       -->
 
       <div class="btns">
-        <calcite-button icon-start="copy" onclick={copy}>{copied}</calcite-button>
+        <calcite-button icon-start="file-pdf" loading={generando} disabled={rows.length === 0 || generando} onclick={reporte}>Descargar PDF</calcite-button>
         <calcite-button appearance="outline" onclick={reset}>Limpiar</calcite-button>
       </div>
     </div>
